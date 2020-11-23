@@ -53,7 +53,7 @@ export class PremiumComponent extends BasePremiumComponent {
             return;
         }
         const pricePromise = new Promise((resolve) => {
-            remote.inAppPurchase.getProducts([AppStorePremiumPlan], (products) => {
+            remote.inAppPurchase.getProducts([AppStorePremiumPlan]).then((products) => {
                 this.ngZone.run(() => {
                     if (products == null || !Array.isArray(products) || products.length === 0) {
                         return;
@@ -64,7 +64,7 @@ export class PremiumComponent extends BasePremiumComponent {
             });
         });
         this.setCanRestorePurchase();
-        remote.inAppPurchase.on('transactions-updated', (event, transactions) => {
+        remote.inAppPurchase.on('transactions-updated', (event: any, transactions: any) => {
             this.ngZone.run(async () => {
                 if (transactions == null || !Array.isArray(transactions)) {
                     return;
@@ -127,7 +127,7 @@ export class PremiumComponent extends BasePremiumComponent {
             request.paymentMethodType = PaymentMethodType.AppleInApp;
             this.purchasePromise = this.apiService.postIapCheck(request);
             await this.purchasePromise;
-            remote.inAppPurchase.purchaseProduct(AppStorePremiumPlan, 1, (isValid) => {
+            remote.inAppPurchase.purchaseProduct(AppStorePremiumPlan, 1).then((isValid) => {
                 if (!isValid) {
                     // TODO?
                 }
