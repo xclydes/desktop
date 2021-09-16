@@ -7,6 +7,7 @@ import { debounceTime } from 'rxjs/operators';
 
 import { DeviceType } from 'jslib-common/enums/deviceType';
 
+import { AccountService } from 'jslib-common/abstractions/account.service';
 import { CryptoService } from 'jslib-common/abstractions/crypto.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
 import { MessagingService } from 'jslib-common/abstractions/messaging.service';
@@ -15,16 +16,14 @@ import { StateService } from 'jslib-common/abstractions/state.service';
 import { StorageService } from 'jslib-common/abstractions/storage.service';
 import { VaultTimeoutService } from 'jslib-common/abstractions/vaultTimeout.service';
 
-import { ConstantsService } from 'jslib-common/services/constants.service';
-
 import { ModalService } from 'jslib-angular/services/modal.service';
 
-import { ElectronConstants } from 'jslib-electron/electronConstants';
+import { SetPinComponent } from '../components/set-pin.component';
 
 import { Utils } from 'jslib-common/misc/utils';
 import { isWindowsStore } from 'jslib-electron/utils';
 
-import { SetPinComponent } from '../components/set-pin.component';
+import { StorageKey } from 'jslib-common/enums/storageKey';
 
 @Component({
     selector: 'app-settings',
@@ -71,9 +70,10 @@ export class SettingsComponent implements OnInit {
     vaultTimeout: FormControl = new FormControl(null);
 
     constructor(private i18nService: I18nService, private platformUtilsService: PlatformUtilsService,
-        private storageService: StorageService, private vaultTimeoutService: VaultTimeoutService,
-        private stateService: StateService, private messagingService: MessagingService,
-        private cryptoService: CryptoService, private modalService: ModalService) {
+        private vaultTimeoutService: VaultTimeoutService, private stateService: StateService,
+        private messagingService: MessagingService, private cryptoService: CryptoService,
+        private modalService: ModalService, private accountService: AccountService,
+        private storageService: StorageService) {
         const isMac = this.platformUtilsService.getDevice() === DeviceType.MacOsDesktop;
 
         // Workaround to avoid ghosting trays https://github.com/electron/electron/issues/17622
@@ -152,31 +152,31 @@ export class SettingsComponent implements OnInit {
 
     async ngOnInit() {
         this.showMinToTray = this.platformUtilsService.getDevice() !== DeviceType.LinuxDesktop;
-        this.vaultTimeout.setValue(await this.vaultTimeoutService.getVaultTimeout());
-        this.vaultTimeoutAction = await this.storageService.get<string>(ConstantsService.vaultTimeoutActionKey);
+        this.vaultTimeout.setValue(await this.accountService.getSetting<number>(StorageKey.VaultTimeout) ?? 1);
+        this.vaultTimeoutAction = await this.accountService.getSetting<string>(StorageKey.VaultTimeoutAction) ?? 'lock';
         const pinSet = await this.vaultTimeoutService.isPinLockSet();
         this.pin = pinSet[0] || pinSet[1];
-        this.disableFavicons = await this.storageService.get<boolean>(ConstantsService.disableFaviconKey);
-        this.enableBrowserIntegration = await this.storageService.get<boolean>(
-            ElectronConstants.enableBrowserIntegration);
-        this.enableBrowserIntegrationFingerprint = await this.storageService.get<boolean>(ElectronConstants.enableBrowserIntegrationFingerprint);
-        this.enableMinToTray = await this.storageService.get<boolean>(ElectronConstants.enableMinimizeToTrayKey);
-        this.enableCloseToTray = await this.storageService.get<boolean>(ElectronConstants.enableCloseToTrayKey);
-        this.enableTray = await this.storageService.get<boolean>(ElectronConstants.enableTrayKey);
-        this.startToTray = await this.storageService.get<boolean>(ElectronConstants.enableStartToTrayKey);
-        this.locale = await this.storageService.get<string>(ConstantsService.localeKey);
-        this.theme = await this.storageService.get<string>(ConstantsService.themeKey);
-        this.clearClipboard = await this.storageService.get<number>(ConstantsService.clearClipboardKey);
-        this.minimizeOnCopyToClipboard = await this.storageService.get<boolean>(
-            ElectronConstants.minimizeOnCopyToClipboardKey);
+        this.disableFavicons = await this.storageService.get(StorageKey.DisableFavicon) ?? false;
+        this.enableBrowserIntegration = await this.accountService.getSetting<boolean>(
+            StorageKey.EnableBrowserIntegration);
+        this.enableBrowserIntegrationFingerprint = await this.accountService.getSetting<boolean>(StorageKey.EnableBrowserIntegrationFingerprint);
+        this.enableMinToTray = await this.accountService.getSetting<boolean>(StorageKey.EnableMinimizeToTrayKey);
+        this.enableCloseToTray = await this.accountService.getSetting<boolean>(StorageKey.EnableCloseToTrayKey);
+        this.enableTray = await this.accountService.getSetting<boolean>(StorageKey.EnableTrayKey);
+        this.startToTray = await this.accountService.getSetting<boolean>(StorageKey.EnableStartToTrayKey);
+        this.locale = await this.accountService.getSetting<string>(StorageKey.Locale);
+        this.theme = await this.accountService.getSetting<string>(StorageKey.Theme);
+        this.clearClipboard = await this.accountService.getSetting<number>(StorageKey.ClearClipboard);
+        this.minimizeOnCopyToClipboard = await this.accountService.getSetting<boolean>(
+            StorageKey.MinimizeOnCopyToClipboardKey);
         this.supportsBiometric = await this.platformUtilsService.supportsBiometric();
         this.biometric = await this.vaultTimeoutService.isBiometricLockSet();
-        this.biometricText = await this.storageService.get<string>(ConstantsService.biometricText);
-        this.noAutoPromptBiometrics = await this.storageService.get<boolean>(ElectronConstants.noAutoPromptBiometrics);
-        this.noAutoPromptBiometricsText = await this.storageService.get<string>(ElectronConstants.noAutoPromptBiometricsText);
-        this.alwaysShowDock = await this.storageService.get<boolean>(ElectronConstants.alwaysShowDock);
+        this.biometricText = await this.accountService.getSetting<string>(StorageKey.BiometricText);
+        this.noAutoPromptBiometrics = await this.accountService.getSetting<boolean>(StorageKey.NoAutoPromptBiometrics);
+        this.noAutoPromptBiometricsText = await this.accountService.getSetting<string>(StorageKey.NoAutoPromptBiometricsText);
+        this.alwaysShowDock = await this.accountService.getSetting<boolean>(StorageKey.AlwaysShowDock);
         this.showAlwaysShowDock = this.platformUtilsService.getDevice() === DeviceType.MacOsDesktop;
-        this.openAtLogin = await this.storageService.get<boolean>(ElectronConstants.openAtLogin);
+        this.openAtLogin = await this.accountService.getSetting<boolean>(StorageKey.OpenAtLogin);
     }
 
     async saveVaultTimeoutOptions() {
@@ -232,10 +232,10 @@ export class SettingsComponent implements OnInit {
             return;
         }
         if (this.biometric) {
-            await this.storageService.save(ConstantsService.biometricUnlockKey, true);
+            await this.accountService.saveSetting(StorageKey.BiometricUnlock, true);
         } else {
-            await this.storageService.remove(ConstantsService.biometricUnlockKey);
-            await this.storageService.remove(ElectronConstants.noAutoPromptBiometrics);
+            await this.accountService.removeSetting(StorageKey.BiometricUnlock);
+            await this.accountService.removeSetting(StorageKey.NoAutoPromptBiometrics);
             this.noAutoPromptBiometrics = false;
         }
         this.vaultTimeoutService.biometricLocked = false;
@@ -248,29 +248,29 @@ export class SettingsComponent implements OnInit {
         }
 
         if (this.noAutoPromptBiometrics) {
-            await this.storageService.save(ElectronConstants.noAutoPromptBiometrics, true);
+            await this.accountService.saveSetting(StorageKey.NoAutoPromptBiometrics, true);
         } else {
-            await this.storageService.remove(ElectronConstants.noAutoPromptBiometrics);
+            await this.accountService.removeSetting(StorageKey.NoAutoPromptBiometrics);
         }
     }
 
     async saveFavicons() {
-        await this.storageService.save(ConstantsService.disableFaviconKey, this.disableFavicons);
-        await this.stateService.save(ConstantsService.disableFaviconKey, this.disableFavicons);
+        await this.accountService.saveSetting(StorageKey.DisableFavicon, this.disableFavicons);
+        await this.stateService.save(StorageKey.DisableFavicon, this.disableFavicons);
         this.messagingService.send('refreshCiphers');
     }
 
     async saveMinToTray() {
-        await this.storageService.save(ElectronConstants.enableMinimizeToTrayKey, this.enableMinToTray);
+        await this.accountService.saveSetting(StorageKey.EnableMinimizeToTrayKey, this.enableMinToTray);
     }
 
     async saveCloseToTray() {
         if (this.requireEnableTray) {
             this.enableTray = true;
-            await this.storageService.save(ElectronConstants.enableTrayKey, this.enableTray);
+            await this.accountService.saveSetting(StorageKey.EnableTrayKey, this.enableTray);
         }
 
-        await this.storageService.save(ElectronConstants.enableCloseToTrayKey, this.enableCloseToTray);
+        await this.accountService.saveSetting(StorageKey.EnableCloseToTrayKey, this.enableCloseToTray);
     }
 
     async saveTray() {
@@ -281,9 +281,9 @@ export class SettingsComponent implements OnInit {
 
             if (confirm) {
                 this.startToTray = false;
-                await this.storageService.save(ElectronConstants.enableStartToTrayKey, this.startToTray);
+                await this.accountService.saveSetting(StorageKey.EnableStartToTrayKey, this.startToTray);
                 this.enableCloseToTray = false;
-                await this.storageService.save(ElectronConstants.enableCloseToTrayKey, this.enableCloseToTray);
+                await this.accountService.saveSetting(StorageKey.EnableCloseToTrayKey, this.enableCloseToTray);
             } else {
                 this.enableTray = true;
             }
@@ -291,42 +291,43 @@ export class SettingsComponent implements OnInit {
             return;
         }
 
-        await this.storageService.save(ElectronConstants.enableTrayKey, this.enableTray);
+        await this.accountService.saveSetting(StorageKey.EnableTrayKey, this.enableTray);
         this.messagingService.send(this.enableTray ? 'showTray' : 'removeTray');
     }
 
     async saveStartToTray() {
         if (this.requireEnableTray) {
             this.enableTray = true;
-            await this.storageService.save(ElectronConstants.enableTrayKey, this.enableTray);
+            await this.accountService.saveSetting(StorageKey.EnableTrayKey, this.enableTray);
         }
 
-        await this.storageService.save(ElectronConstants.enableStartToTrayKey, this.startToTray);
+        await this.accountService.saveSetting(StorageKey.EnableStartToTrayKey, this.startToTray);
     }
 
     async saveLocale() {
-        await this.storageService.save(ConstantsService.localeKey, this.locale);
+        await this.accountService.saveSetting(StorageKey.Locale, this.locale);
     }
 
     async saveTheme() {
-        await this.storageService.save(ConstantsService.themeKey, this.theme);
+        await this.accountService.saveSetting(StorageKey.Theme, this.theme);
+        await this.storageService.save(StorageKey.Theme, this.theme);
         window.setTimeout(() => window.location.reload(), 200);
     }
 
     async saveMinOnCopyToClipboard() {
-        await this.storageService.save(ElectronConstants.minimizeOnCopyToClipboardKey, this.minimizeOnCopyToClipboard);
+        await this.accountService.saveSetting(StorageKey.MinimizeOnCopyToClipboardKey, this.minimizeOnCopyToClipboard);
     }
 
     async saveClearClipboard() {
-        await this.storageService.save(ConstantsService.clearClipboardKey, this.clearClipboard);
+        await this.accountService.saveSetting(StorageKey.ClearClipboard, this.clearClipboard);
     }
 
     async saveAlwaysShowDock() {
-        await this.storageService.save(ElectronConstants.alwaysShowDock, this.alwaysShowDock);
+        await this.accountService.saveSetting(StorageKey.AlwaysShowDock, this.alwaysShowDock);
     }
 
     async saveOpenAtLogin() {
-        this.storageService.save(ElectronConstants.openAtLogin, this.openAtLogin);
+        this.accountService.saveSetting(StorageKey.OpenAtLogin, this.openAtLogin);
         this.messagingService.send(this.openAtLogin ? 'addOpenAtLogin' : 'removeOpenAtLogin');
     }
 
@@ -349,7 +350,7 @@ export class SettingsComponent implements OnInit {
             return;
         }
 
-        await this.storageService.save(ElectronConstants.enableBrowserIntegration, this.enableBrowserIntegration);
+        await this.accountService.saveSetting(StorageKey.EnableBrowserIntegration, this.enableBrowserIntegration);
         this.messagingService.send(this.enableBrowserIntegration ? 'enableBrowserIntegration' : 'disableBrowserIntegration');
 
         if (!this.enableBrowserIntegration) {
@@ -359,6 +360,6 @@ export class SettingsComponent implements OnInit {
     }
 
     async saveBrowserIntegrationFingerprint() {
-        await this.storageService.save(ElectronConstants.enableBrowserIntegrationFingerprint, this.enableBrowserIntegrationFingerprint);
+        await this.accountService.saveSetting(StorageKey.EnableBrowserIntegrationFingerprint, this.enableBrowserIntegrationFingerprint);
     }
 }

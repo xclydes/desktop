@@ -13,6 +13,7 @@ import { TwoFactorOptionsComponent } from './two-factor-options.component';
 
 import { TwoFactorProviderType } from 'jslib-common/enums/twoFactorProviderType';
 
+import { AccountService } from 'jslib-common/abstractions/account.service';
 import { ApiService } from 'jslib-common/abstractions/api.service';
 import { AuthService } from 'jslib-common/abstractions/auth.service';
 import { EnvironmentService } from 'jslib-common/abstractions/environment.service';
@@ -21,11 +22,12 @@ import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.se
 import { StateService } from 'jslib-common/abstractions/state.service';
 import { StorageService } from 'jslib-common/abstractions/storage.service';
 import { SyncService } from 'jslib-common/abstractions/sync.service';
-import { UserService } from 'jslib-common/abstractions/user.service';
 
 import { ModalService } from 'jslib-angular/services/modal.service';
 
 import { TwoFactorComponent as BaseTwoFactorComponent } from 'jslib-angular/components/two-factor.component';
+
+import { StorageKey } from 'jslib-common/enums/storageKey';
 
 @Component({
     selector: 'app-two-factor',
@@ -41,12 +43,12 @@ export class TwoFactorComponent extends BaseTwoFactorComponent {
         platformUtilsService: PlatformUtilsService, syncService: SyncService,
         environmentService: EnvironmentService, private modalService: ModalService,
         stateService: StateService, storageService: StorageService, route: ActivatedRoute,
-        private userService: UserService) {
+        private accountService: AccountService) {
         super(authService, router, i18nService, apiService, platformUtilsService, window, environmentService,
             stateService, storageService, route);
         super.onSuccessfulLogin = () => {
             return syncService.fullSync(true).then(async () => {
-                if (await this.userService.getForcePasswordReset()) {
+                if (await this.accountService.getSetting<boolean>(StorageKey.ForcePasswordReset)) {
                     this.router.navigate(['update-temp-password']);
                 }
             });

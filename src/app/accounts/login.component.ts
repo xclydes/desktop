@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 
 import { EnvironmentComponent } from './environment.component';
 
+import { AccountService } from 'jslib-common/abstractions/account.service';
 import { AuthService } from 'jslib-common/abstractions/auth.service';
 import { CryptoFunctionService } from 'jslib-common/abstractions/cryptoFunction.service';
 import { EnvironmentService } from 'jslib-common/abstractions/environment.service';
@@ -20,12 +21,13 @@ import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.se
 import { StateService } from 'jslib-common/abstractions/state.service';
 import { StorageService } from 'jslib-common/abstractions/storage.service';
 import { SyncService } from 'jslib-common/abstractions/sync.service';
-import { UserService } from 'jslib-common/abstractions/user.service';
 
 import { BroadcasterService } from 'jslib-angular/services/broadcaster.service';
 import { ModalService } from 'jslib-angular/services/modal.service';
 
 import { LoginComponent as BaseLoginComponent } from 'jslib-angular/components/login.component';
+
+import { StorageKey } from 'jslib-common/enums/storageKey';
 
 const BroadcasterSubscriptionId = 'LoginComponent';
 
@@ -46,12 +48,12 @@ export class LoginComponent extends BaseLoginComponent implements OnDestroy {
         environmentService: EnvironmentService, passwordGenerationService: PasswordGenerationService,
         cryptoFunctionService: CryptoFunctionService, storageService: StorageService,
         private broadcasterService: BroadcasterService, private ngZone: NgZone,
-        private messagingService: MessagingService, private userService: UserService) {
+        private messagingService: MessagingService, private accountService: AccountService) {
         super(authService, router, platformUtilsService, i18nService, stateService, environmentService,
             passwordGenerationService, cryptoFunctionService, storageService);
         super.onSuccessfulLogin = () => {
             return syncService.fullSync(true).then(async () => {
-                if (await this.userService.getForcePasswordReset()) {
+                if (await this.accountService.getSetting<boolean>(StorageKey.ForcePasswordReset)) {
                     this.router.navigate(['update-temp-password']);
                 }
             });

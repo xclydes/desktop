@@ -12,7 +12,6 @@ import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.se
 import { PolicyService } from 'jslib-common/abstractions/policy.service';
 import { SearchService } from 'jslib-common/abstractions/search.service';
 import { SendService } from 'jslib-common/abstractions/send.service';
-import { UserService } from 'jslib-common/abstractions/user.service';
 
 import { SendComponent as BaseSendComponent } from 'jslib-angular/components/send/send.component';
 
@@ -44,11 +43,10 @@ export class SendComponent extends BaseSendComponent implements OnInit, OnDestro
     constructor(sendService: SendService, i18nService: I18nService,
         platformUtilsService: PlatformUtilsService, environmentService: EnvironmentService,
         private broadcasterService: BroadcasterService, ngZone: NgZone,
-        searchService: SearchService, policyService: PolicyService,
-        userService: UserService) {
+        searchService: SearchService, policyService: PolicyService) {
         super(sendService, i18nService, platformUtilsService,
               environmentService, ngZone, searchService,
-              policyService, userService);
+              policyService);
     }
 
     async ngOnInit() {

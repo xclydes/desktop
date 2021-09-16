@@ -5,6 +5,7 @@ import {
     Router,
 } from '@angular/router';
 
+import { AccountService } from 'jslib-common/abstractions/account.service';
 import { ApiService } from 'jslib-common/abstractions/api.service';
 import { AuthService } from 'jslib-common/abstractions/auth.service';
 import { CryptoFunctionService } from 'jslib-common/abstractions/cryptoFunction.service';
@@ -15,9 +16,10 @@ import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.se
 import { StateService } from 'jslib-common/abstractions/state.service';
 import { StorageService } from 'jslib-common/abstractions/storage.service';
 import { SyncService } from 'jslib-common/abstractions/sync.service';
-import { UserService } from 'jslib-common/abstractions/user.service';
 
 import { SsoComponent as BaseSsoComponent } from 'jslib-angular/components/sso.component';
+
+import { StorageKey } from 'jslib-common/enums/storageKey';
 
 @Component({
     selector: 'app-sso',
@@ -29,7 +31,7 @@ export class SsoComponent extends BaseSsoComponent {
         storageService: StorageService, stateService: StateService,
         platformUtilsService: PlatformUtilsService, apiService: ApiService,
         cryptoFunctionService: CryptoFunctionService, environmentService: EnvironmentService,
-        passwordGenerationService: PasswordGenerationService, private userService: UserService) {
+        passwordGenerationService: PasswordGenerationService, private accountService: AccountService) {
         super(authService, router, i18nService, route, storageService, stateService, platformUtilsService,
             apiService, cryptoFunctionService, environmentService, passwordGenerationService);
         super.onSuccessfulLogin = () => {
@@ -38,7 +40,7 @@ export class SsoComponent extends BaseSsoComponent {
         this.redirectUri = 'bitwarden://sso-callback';
         this.clientId = 'desktop';
         super.onSuccessfulLoginNavigate = async () => {
-            if (await this.userService.getForcePasswordReset()) {
+            if (await this.accountService.getSetting<boolean>(StorageKey.ForcePasswordReset)) {
                 this.router.navigate(['update-temp-password']);
             } else {
                 this.router.navigate([this.successRoute]);
